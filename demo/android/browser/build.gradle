@@ -1,0 +1,60 @@
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:0.13.2'
+    }
+}
+
+apply plugin: 'android'
+
+android {
+    compileSdkVersion 19
+    buildToolsVersion "19.1.0"
+
+    defaultConfig {
+        applicationId "org.fourthline.cling.demo.android.browser"
+        minSdkVersion 15
+        targetSdkVersion 19
+        versionCode 1
+        versionName "1.0"
+    }
+
+    sourceSets {
+        main {
+            manifest.srcFile 'src/android/AndroidManifest.xml'
+            java.srcDirs = ['src/main/java']
+            res.srcDirs = ['src/android/res']
+        }
+    }
+
+    buildTypes {
+        release {
+            runProguard false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    packagingOptions {
+        exclude 'META-INF/beans.xml'
+    }
+
+}
+
+repositories {
+    mavenCentral()
+    maven {
+        url 'http://4thline.org/m2'
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile group: 'org.fourthline.cling', name: 'cling-core', version:'2.0-alpha3'
+    compile group: 'org.fourthline.cling', name: 'cling-support', version:'2.0-alpha3'
+    compile group: 'org.eclipse.jetty', name: 'jetty-server', version:'8.1.12.v20130726'
+    compile group: 'org.eclipse.jetty', name: 'jetty-servlet', version:'8.1.12.v20130726'
+    compile group: 'org.eclipse.jetty', name: 'jetty-client', version:'8.1.12.v20130726'
+}
