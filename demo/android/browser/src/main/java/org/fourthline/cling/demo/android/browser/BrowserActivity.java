@@ -89,9 +89,9 @@ public class BrowserActivity extends ListActivity {
         super.onCreate(savedInstanceState);
 
         // Fix the logging integration between java.util.logging and Android internal logging
-        org.seamless.util.logging.LoggingUtil.resetRootHandler(
-            new org.seamless.android.FixedAndroidLogHandler()
-        );
+//        org.seamless.util.logging.LoggingUtil.resetRootHandler(
+//            new org.seamless.android.FixedAndroidLogHandler()
+//        );
         // Now you can enable logging as needed for various categories of Cling:
         // Logger.getLogger("org.fourthline.cling").setLevel(Level.FINEST);
 
