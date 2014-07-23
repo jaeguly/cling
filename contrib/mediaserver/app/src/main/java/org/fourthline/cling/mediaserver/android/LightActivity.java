@@ -110,9 +110,9 @@ public class LightActivity extends Activity implements PropertyChangeListener {
         super.onCreate(savedInstanceState);
         // DOC:LOGGING
         // Fix the logging integration between java.util.logging and Android internal logging
-//        org.seamless.util.logging.LoggingUtil.resetRootHandler(
-//            new org.seamless.android.FixedAndroidLogHandler()
-//        );
+        org.seamless.util.logging.LoggingUtil.resetRootHandler(
+            new org.fourthline.cling.android.FixedAndroidLogHandler()
+        );
         // Logger.getLogger("org.fourthline.cling").setLevel(Level.FINEST);
         // DOC:LOGGING
 
