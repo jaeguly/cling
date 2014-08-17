@@ -204,7 +204,8 @@ public class MediaServerActivity extends Activity {
         AnnotationLocalServiceBinder binder = new AnnotationLocalServiceBinder();
 
         LocalService[] myLocalServices = new LocalService[]{
-                createContentDirectoryService(binder)
+                createContentDirectoryService(binder),
+                createConnectionManagerService(binder)
         };
 
         return new LocalDevice(identity, type, details, createDefaultDeviceIcon(), myLocalServices);
@@ -221,6 +222,25 @@ public class MediaServerActivity extends Activity {
                 contentDirectoryService, AndroidContentDirectoryService.class));
 
         return contentDirectoryService;
+    }
+
+    // ConnectionManager
+    private LocalService<ConnectionManagerService> createConnectionManagerService(
+            AnnotationLocalServiceBinder binder) {
+        LocalService<ConnectionManagerService> connectionManagerService
+                = binder.read(ConnectionManagerService.class);
+
+        connectionManagerService.setManager(new DefaultServiceManager<ConnectionManagerService>(
+                connectionManagerService, null) {
+            @Override
+            protected ConnectionManagerService createServiceInstance() throws Exception {
+                ProtocolInfos protocolInfos = new ProtocolInfos("http-get:*:video/mpeg:*,http-get:*:audio/mpeg:*");
+
+                return new ConnectionManagerService(protocolInfos, null);
+            }
+        });
+
+        return connectionManagerService;
     }
 
     protected Icon createDefaultDeviceIcon() {

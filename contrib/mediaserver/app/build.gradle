@@ -24,6 +24,7 @@ android {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile project(':lib')
     compile 'org.fourthline.cling:cling-core:2.0-alpha3'
     compile 'org.fourthline.cling:cling-support:2.0-alpha3'
     compile 'org.eclipse.jetty:jetty-servlet:8.1.12.v20130726'
