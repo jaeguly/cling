@@ -163,6 +163,12 @@ public abstract class NanoHTTPD {
                         registerConnection(finalAccept);
                         finalAccept.setSoTimeout(SOCKET_READ_TIMEOUT);
                         final InputStream inputStream = finalAccept.getInputStream();
+
+                        if (inputStream == null) {
+                            safeClose(finalAccept);
+                            break;
+                        }
+
                         asyncRunner.exec(new Runnable() {
                             @Override
                             public void run() {
