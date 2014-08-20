@@ -4,6 +4,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PipedInputStream;
 
+import fi.iki.elonen.NanoHTTPD;
+
 import static fi.iki.elonen.NanoHTTPD.Response.Status.OK;
 
 public class HttpChunkedResponseTest extends HttpServerTest {

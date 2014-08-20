@@ -6,6 +6,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.net.InetAddress;
 
+import fi.iki.elonen.NanoHTTPD;
+
 import static org.junit.Assert.assertEquals;
 
 public class HttpSessionHeadersTest extends HttpServerTest {

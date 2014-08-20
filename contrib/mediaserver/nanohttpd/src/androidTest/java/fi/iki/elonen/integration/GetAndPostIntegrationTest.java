@@ -7,9 +7,9 @@ import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.mime.HttpMultipartMode;
-import org.apache.http.entity.mime.MultipartEntity;
-import org.apache.http.entity.mime.content.StringBody;
+//import org.apache.http.entity.mime.HttpMultipartMode;
+//import org.apache.http.entity.mime.MultipartEntity;
+//import org.apache.http.entity.mime.content.StringBody;
 import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
@@ -80,21 +80,21 @@ public class GetAndPostIntegrationTest extends IntegrationTestBase<GetAndPostInt
         assertEquals("POST:testPostRequestWithFormEncodedParameters-params=2;age=120;gender=Male", responseBody);
     }
 
-    @Test
-    public void testPostRequestWithMultipartEncodedParameters() throws Exception {
-        testServer.response = "testPostRequestWithMultipartEncodedParameters";
-
-        HttpPost httppost = new HttpPost("http://localhost:8192/");
-        MultipartEntity reqEntity = new MultipartEntity(HttpMultipartMode.BROWSER_COMPATIBLE);
-        reqEntity.addPart("age", new StringBody("120"));
-        reqEntity.addPart("gender", new StringBody("Male"));
-        httppost.setEntity(reqEntity);
-
-        ResponseHandler<String> responseHandler = new BasicResponseHandler();
-        String responseBody = httpclient.execute(httppost, responseHandler);
-
-        assertEquals("POST:testPostRequestWithMultipartEncodedParameters-params=2;age=120;gender=Male", responseBody);
-    }
+//    @Test
+//    public void testPostRequestWithMultipartEncodedParameters() throws Exception {
+//        testServer.response = "testPostRequestWithMultipartEncodedParameters";
+//
+//        HttpPost httppost = new HttpPost("http://localhost:8192/");
+//        MultipartEntity reqEntity = new MultipartEntity(HttpMultipartMode.BROWSER_COMPATIBLE);
+//        reqEntity.addPart("age", new StringBody("120"));
+//        reqEntity.addPart("gender", new StringBody("Male"));
+//        httppost.setEntity(reqEntity);
+//
+//        ResponseHandler<String> responseHandler = new BasicResponseHandler();
+//        String responseBody = httpclient.execute(httppost, responseHandler);
+//
+//        assertEquals("POST:testPostRequestWithMultipartEncodedParameters-params=2;age=120;gender=Male", responseBody);
+//    }
 
     @Override public TestServer createTestServer() {
         return new TestServer();
