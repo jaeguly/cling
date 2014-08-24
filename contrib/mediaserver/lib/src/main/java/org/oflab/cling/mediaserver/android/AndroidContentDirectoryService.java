@@ -1,4 +1,4 @@
-package org.fourthline.cling.mediaserver.android;
+package org.oflab.cling.mediaserver.android;
 
 import android.util.Log;
 

@@ -1,4 +1,4 @@
-package org.fourthline.cling.mediaserver.android;
+package org.oflab.cling.mediaserver.android.activity;
 
 import android.app.Activity;
 import android.content.ComponentName;
@@ -35,6 +35,7 @@ import org.fourthline.cling.support.connectionmanager.ConnectionManagerService;
 import org.fourthline.cling.support.model.ProtocolInfos;
 import org.fourthline.cling.transport.Router;
 import org.fourthline.cling.transport.RouterException;
+import org.oflab.cling.mediaserver.android.AndroidContentDirectoryService;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -54,7 +55,7 @@ public class MediaServerActivity extends Activity {
 
         // rest a root log handler for cling
         org.seamless.util.logging.LoggingUtil.resetRootHandler(
-                new org.fourthline.cling.android.FixedAndroidLogHandler()
+                new org.oflab.cling.mediaserver.android.util.FixedAndroidLogHandler()
         );
 
         // Connect to an application service, creating it if needed.

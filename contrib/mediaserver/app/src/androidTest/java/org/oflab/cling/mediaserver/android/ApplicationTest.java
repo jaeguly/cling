@@ -1,4 +1,4 @@
-package org.fourthline.cling.mediaserver;
+package org.oflab.cling.mediaserver.android;
 
 import android.app.Application;
 import android.test.ApplicationTestCase;

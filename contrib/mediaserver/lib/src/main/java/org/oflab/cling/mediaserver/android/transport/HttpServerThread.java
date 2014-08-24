@@ -1,4 +1,4 @@
-package org.fourthline.cling.android.transport;
+package org.oflab.cling.mediaserver.android.transport;
 
 import org.apache.http.HttpServerConnection;
 import org.apache.http.HttpVersion;
