@@ -20,11 +20,13 @@ import org.apache.http.protocol.ResponseDate;
 import org.apache.http.protocol.ResponseServer;
 
 import java.io.IOException;
-import java.io.InterruptedIOException;
+import java.net.Inet4Address;
 import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
+import java.net.SocketException;
+import java.util.Enumeration;
 import java.util.logging.Logger;
 
 public class HttpServer {
@@ -45,10 +47,56 @@ public class HttpServer {
         registry = new HttpRequestHandlerRegistry();
     }
 
-    synchronized public void start() {
-        // TODO:
+    synchronized public boolean start() {
+        InetAddress inetAddress = getInetAddress();
+
+        if (inetAddress == null) {
+            logger.info("can't start server.");
+            return false;
+        }
+
+        try {
+            listenerThread = new ListenerThread(inetAddress, port, params, registry);
+            listenerThread.start();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return true;
     }
 
+    synchronized  public void stop() {
+        if (listenerThread != null) {
+            listenerThread.abort();
+        }
+    }
+
+    public InetAddress getInetAddress() {
+        InetAddress foundInetAddress = null;
+        try {
+            Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
+
+            while (networkInterfaces.hasMoreElements()) {
+                NetworkInterface networkInterface = networkInterfaces.nextElement();
+
+                Enumeration<InetAddress> inetAddresses = networkInterface.getInetAddresses();
+
+                while (inetAddresses.hasMoreElements()) {
+                    InetAddress inetAddress = inetAddresses.nextElement();
+
+                    if (!inetAddress.isLoopbackAddress()
+                            && inetAddress instanceof Inet4Address) {
+                        foundInetAddress = inetAddress;
+                        break;
+                    }
+                }
+            }
+        } catch (SocketException se) {
+            logger.warning("error: retrieving network interfaces");
+        }
+
+        return foundInetAddress;
+    }
 
     class ListenerThread extends Thread {
         private ServerSocket serverSocket;
@@ -149,8 +197,10 @@ public class HttpServer {
             }
         }
     }
+
     private static final Logger logger = Logger.getLogger(HttpServer.class.getName());
     protected HttpRequestHandlerRegistry registry;
     protected HttpParams params;
     protected int port;
+    protected ListenerThread listenerThread;
 }
