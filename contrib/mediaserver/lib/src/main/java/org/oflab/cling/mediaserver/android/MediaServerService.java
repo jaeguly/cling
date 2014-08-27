@@ -2,10 +2,17 @@ package org.oflab.cling.mediaserver.android;
 
 import android.app.Service;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Binder;
 import android.os.IBinder;
+
+import org.fourthline.cling.android.AndroidUpnpService;
+import org.fourthline.cling.android.AndroidUpnpServiceImpl;
+import org.fourthline.cling.model.meta.LocalDevice;
+import org.fourthline.cling.model.types.UDN;
+import org.fourthline.cling.registry.Registry;
 
 import java.util.logging.Logger;
 
@@ -26,6 +33,13 @@ public class MediaServerService extends Service {
     public void onCreate() {
         super.onCreate();
         // The service is being created
+
+        upnpServiceConnection = new UpnpServiceConnection(new MediaServer());
+
+        getApplicationContext().bindService(
+                new Intent(MediaServerService.this, AndroidUpnpServiceImpl.class),
+                upnpServiceConnection,
+                Context.BIND_AUTO_CREATE);
     }
 
     @Override
@@ -44,22 +58,58 @@ public class MediaServerService extends Service {
 
     @Override
     public void onDestroy() {
+        super.onDestroy();
         // The service is no longer used and is being destroyed
+
+        if (upnpServiceConnection != null) {
+            upnpServiceConnection.abort();
+            getApplicationContext().unbindService(upnpServiceConnection);
+        }
     }
 
-    private class ContentHttpServerConnection implements ServiceConnection {
+    // monitoring the state of an upnp service.
+    private class UpnpServiceConnection implements ServiceConnection {
+
+        UpnpServiceConnection(MediaServer mediaServer) {
+            this.mediaServer = mediaServer;
+        }
 
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
+            upnpService = (AndroidUpnpService) service;
 
+            UDN udn = mediaServer.getUdn();
+            Registry registry = upnpService.getRegistry();
+
+            LocalDevice mediaServerDevice = registry.getLocalDevice(udn, true);
+
+            if (mediaServerDevice == null) {
+                try {
+                    mediaServerDevice = mediaServer.createDevice();
+
+                    registry.addDevice(mediaServerDevice);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
         }
 
         @Override
         public void onServiceDisconnected(ComponentName name) {
-
+            upnpService = null;
+            mediaServer = null;
         }
+
+        public void abort() {
+            if (upnpService != null)
+                upnpService.getRegistry().removeDevice(mediaServer.getUdn());
+        }
+
+        protected AndroidUpnpService upnpService;
+        protected MediaServer mediaServer;
     }
 
     private static final Logger logger = Logger.getLogger(MediaServerService.class.getName());
     private final IBinder binder = new LocalBinder();
+    protected UpnpServiceConnection upnpServiceConnection;
 }

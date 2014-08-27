@@ -143,6 +143,9 @@ public class MediaServer {
         );
     }
 
+    public UDN getUdn() {
+        return udn;
+    }
 
     private static final Logger logger = Logger.getLogger(MediaServer.class.getName());
     private UDN udn;
