@@ -16,5 +16,8 @@
 
     <string name="registeringDevice">Registering UPnP device...</string>
     <string name="createDeviceFailed">Creating of UPnP device failed, check the log!</string>
+    <string name="appExit">Exit</string>
+    <string name="notYet">Not yet implemented</string>
+    <string name="exitingService">\"Exiting media service..\"</string>
 
 </resources>
