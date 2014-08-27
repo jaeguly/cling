@@ -21,11 +21,10 @@ import java.io.IOException;
 import java.util.UUID;
 import java.util.logging.Logger;
 
-public class MediaServerDevice {
+public class MediaServer {
 
-    public MediaServerDevice() {
+    public MediaServer() {
     }
-
 
     public LocalDevice createDevice()
             throws ValidationException, LocalServiceBindingException, IOException {
@@ -145,6 +144,6 @@ public class MediaServerDevice {
     }
 
 
-    private static final Logger logger = Logger.getLogger(MediaServerDevice.class.getName());
+    private static final Logger logger = Logger.getLogger(MediaServer.class.getName());
     private UDN udn;
 }
