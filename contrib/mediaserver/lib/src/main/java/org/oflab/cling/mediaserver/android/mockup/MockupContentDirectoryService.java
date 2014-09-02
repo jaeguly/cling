@@ -1,4 +1,4 @@
-package org.oflab.cling.mediaserver.android;
+package org.oflab.cling.mediaserver.android.mockup;
 
 import android.util.Log;
 
@@ -20,7 +20,7 @@ import org.seamless.util.MimeType;
 import java.util.ArrayList;
 import java.util.List;
 
-public class AndroidContentDirectoryService extends AbstractContentDirectoryService {
+public class MockupContentDirectoryService extends AbstractContentDirectoryService {
 
 
     @Override
@@ -142,13 +142,13 @@ public class AndroidContentDirectoryService extends AbstractContentDirectoryServ
     }
 
     @Override
-    public BrowseResult search(String containerId, String searchCriteria, String filter, long firstResult,
-                               long maxResults, SortCriterion[] orderBy) throws ContentDirectoryException {
-        Log.i("MyContentDirectoryService", "search(): containerId = " + containerId + ", searchCriteria = "
-                + searchCriteria);
-
+    public BrowseResult search(String containerId,
+                               String searchCriteria, String filter,
+                               long firstResult, long maxResults,
+                               SortCriterion[] orderBy) throws ContentDirectoryException {
+        // You can override this method to implement searching!
         return super.search(containerId, searchCriteria, filter, firstResult, maxResults, orderBy);
     }
 
-    private static final String TAG = AndroidContentDirectoryService.class.getSimpleName();
+    private static final String TAG = MockupContentDirectoryService.class.getSimpleName();
 }

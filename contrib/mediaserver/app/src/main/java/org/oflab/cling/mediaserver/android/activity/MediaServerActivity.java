@@ -35,7 +35,7 @@ import org.fourthline.cling.support.connectionmanager.ConnectionManagerService;
 import org.fourthline.cling.support.model.ProtocolInfos;
 import org.fourthline.cling.transport.Router;
 import org.fourthline.cling.transport.RouterException;
-import org.oflab.cling.mediaserver.android.AndroidContentDirectoryService;
+import org.oflab.cling.mediaserver.android.mockup.MockupContentDirectoryService;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -213,14 +213,14 @@ public class MediaServerActivity extends Activity {
     }
 
     // ContentDirectory
-    private LocalService<AndroidContentDirectoryService> createContentDirectoryService(
+    private LocalService<MockupContentDirectoryService> createContentDirectoryService(
             AnnotationLocalServiceBinder binder) {
 
-        LocalService<AndroidContentDirectoryService> contentDirectoryService
-                = binder.read(AndroidContentDirectoryService.class);
+        LocalService<MockupContentDirectoryService> contentDirectoryService
+                = binder.read(MockupContentDirectoryService.class);
 
-        contentDirectoryService.setManager(new DefaultServiceManager<AndroidContentDirectoryService>(
-                contentDirectoryService, AndroidContentDirectoryService.class));
+        contentDirectoryService.setManager(new DefaultServiceManager<MockupContentDirectoryService>(
+                contentDirectoryService, MockupContentDirectoryService.class));
 
         return contentDirectoryService;
     }
