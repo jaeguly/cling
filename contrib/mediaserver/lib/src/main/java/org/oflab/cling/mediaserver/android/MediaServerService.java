@@ -34,7 +34,8 @@ public class MediaServerService extends Service {
         super.onCreate();
         // The service is being created
 
-        upnpServiceConnection = new UpnpServiceConnection(new MediaServer());
+        MediaServer mediaServer = new MediaServer();
+        upnpServiceConnection = new UpnpServiceConnection(mediaServer);
 
         getApplicationContext().bindService(
                 new Intent(MediaServerService.this, AndroidUpnpServiceImpl.class),
@@ -88,6 +89,8 @@ public class MediaServerService extends Service {
                     mediaServerDevice = mediaServer.createDevice();
 
                     registry.addDevice(mediaServerDevice);
+
+                    mediaServer.loadContents();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -109,7 +112,35 @@ public class MediaServerService extends Service {
         protected MediaServer mediaServer;
     }
 
+    // monitoring the state of a http server delivering local contents
+    private class ContentServiceConnection implements ServiceConnection {
+
+        ContentServiceConnection(MediaServer mediaServer) {
+            this.mediaServer = mediaServer;
+        }
+
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            httpServerService = (HttpServerService) service;
+            httpServerService.addHandler("*", mediaServer);
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            httpServerService = null;
+        }
+
+        public void abort() {
+            if (httpServerService != null)
+                httpServerService.removeHandler("*");
+        }
+
+        protected HttpServerService httpServerService;
+        protected MediaServer mediaServer;
+    }
+
     private static final Logger logger = Logger.getLogger(MediaServerService.class.getName());
     private final IBinder binder = new LocalBinder();
     protected UpnpServiceConnection upnpServiceConnection;
+    protected ContentServiceConnection contentServiceConnection;
 }

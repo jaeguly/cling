@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
 
+import org.apache.http.protocol.HttpRequestHandler;
 import org.oflab.cling.mediaserver.android.transport.HttpServer;
 
 import java.util.logging.Logger;
@@ -45,6 +46,18 @@ public class HttpServerService extends Service {
     public class LocalBinder extends Binder {
         HttpServerService getService() {
             return HttpServerService.this;
+        }
+    }
+
+    public void addHandler(String pattern, HttpRequestHandler handler) {
+        if (httpServer != null) {
+            httpServer.getRequestHandlerRegistry().register(pattern, handler);
+        }
+    }
+
+    public void removeHandler(String pattern) {
+        if (httpServer != null) {
+            httpServer.getRequestHandlerRegistry().unregister(pattern);
         }
     }
 

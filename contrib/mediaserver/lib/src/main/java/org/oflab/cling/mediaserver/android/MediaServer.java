@@ -1,5 +1,12 @@
 package org.oflab.cling.mediaserver.android;
 
+import android.provider.MediaStore;
+
+import org.apache.http.HttpException;
+import org.apache.http.HttpRequest;
+import org.apache.http.HttpResponse;
+import org.apache.http.protocol.HttpContext;
+import org.apache.http.protocol.HttpRequestHandler;
 import org.fourthline.cling.binding.LocalServiceBindingException;
 import org.fourthline.cling.binding.annotations.AnnotationLocalServiceBinder;
 import org.fourthline.cling.model.DefaultServiceManager;
@@ -15,14 +22,18 @@ import org.fourthline.cling.model.types.DeviceType;
 import org.fourthline.cling.model.types.UDADeviceType;
 import org.fourthline.cling.model.types.UDN;
 import org.fourthline.cling.support.connectionmanager.ConnectionManagerService;
+import org.fourthline.cling.support.model.DIDLObject;
 import org.fourthline.cling.support.model.ProtocolInfos;
+import org.fourthline.cling.support.model.container.Container;
+import org.oflab.cling.mediaserver.android.content.AllImageContainer;
+import org.oflab.cling.mediaserver.android.content.BasicContainer;
 import org.oflab.cling.mediaserver.android.mockup.MockupContentDirectoryService;
 
 import java.io.IOException;
 import java.util.UUID;
 import java.util.logging.Logger;
 
-public class MediaServer {
+public class MediaServer implements HttpRequestHandler {
 
     public MediaServer() {
     }
@@ -30,8 +41,9 @@ public class MediaServer {
     public LocalDevice createDevice()
             throws ValidationException, LocalServiceBindingException, IOException {
 
+        // TODO: Not stable
         // Unique device name
-        udn = new UDN(UUID.randomUUID()); // TODO: Not stable!
+        udn = new UDN(UUID.randomUUID());
         // TEST: got from UUID.randomUUID()
         udn = new UDN("571c121c-c10a-428c-8ec1-62d3676c105d");
 
@@ -56,8 +68,12 @@ public class MediaServer {
         return new LocalDevice(identity, type, details, createDefaultDeviceIcon(), myLocalServices);
     }
 
+    public MediaServer getMediaServer() {
+        return this;
+    }
+
     // ContentDirectory
-    private LocalService<MockupContentDirectoryService> createContentDirectoryService(
+    private LocalService<MockupContentDirectoryService> createMockupContentDirectoryService(
             AnnotationLocalServiceBinder binder) {
 
         LocalService<MockupContentDirectoryService> contentDirectoryService
@@ -65,6 +81,25 @@ public class MediaServer {
 
         contentDirectoryService.setManager(new DefaultServiceManager<MockupContentDirectoryService>(
                 contentDirectoryService, MockupContentDirectoryService.class));
+
+        return contentDirectoryService;
+    }
+
+    // ContentDirectory
+    private LocalService<ContentDirectoryService> createContentDirectoryService(
+            AnnotationLocalServiceBinder binder) {
+
+        LocalService<ContentDirectoryService> contentDirectoryService
+                = binder.read(ContentDirectoryService.class);
+
+        contentDirectoryService.setManager(
+                new DefaultServiceManager<ContentDirectoryService>(
+                    contentDirectoryService, ContentDirectoryService.class) {
+                    @Override
+                    protected ContentDirectoryService createServiceInstance() throws Exception {
+                        return new ContentDirectoryService(getMediaServer());
+                    }
+                });
 
         return contentDirectoryService;
     }
@@ -148,6 +183,50 @@ public class MediaServer {
         return udn;
     }
 
+    @Override
+    public void handle(HttpRequest httpRequest, HttpResponse httpResponse, HttpContext httpContext)
+            throws HttpException, IOException {
+        // TODO:
+
+    }
+
+    public static final String ROOT_ID = "C0";
+    public static final String ROOT_PARENT_ID = "-1";
+    public static final String ROOT_TITLE = "root";
+    public static final String AUDIO_ID = "C1";
+    public static final String IMAGE_ID = "C2";
+    public static final String VIDEO_ID = "C3";
+    public static final String ALL_IMAGE_ID = "21";
+    public static final String AUDIO_TITLE = "Music";
+    public static final String IMAGE_TITLE = "Images";
+    public static final String VIDEO_TITLE = "Video";
+
+    public void loadContents() {
+        if (rootContainer != null)
+            return;
+
+        rootContainer = new BasicContainer(ROOT_ID, ROOT_PARENT_ID, ROOT_TITLE);
+
+        // image part
+        BasicContainer imageRootContainer = new BasicContainer(IMAGE_ID, ROOT_ID, IMAGE_TITLE);
+        rootContainer.addContainerAndCount(imageRootContainer);
+
+        BasicContainer allImageContainer = new AllImageContainer(ALL_IMAGE_ID, IMAGE_ID, "All");
+        imageRootContainer.addContainerAndCount(allImageContainer);
+    }
+
+    public DIDLObject findObjectById(String id) {
+        return findObjectById(id, rootContainer);
+    }
+
+    public DIDLObject findObjectById(String id, Container container) {
+        // TODO:
+        return rootContainer;
+    }
+
+
     private static final Logger logger = Logger.getLogger(MediaServer.class.getName());
+    private BasicContainer rootContainer;
     private UDN udn;
+
 }
