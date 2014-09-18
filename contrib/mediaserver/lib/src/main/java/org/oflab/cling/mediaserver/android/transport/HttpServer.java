@@ -20,21 +20,23 @@ import org.apache.http.protocol.ResponseDate;
 import org.apache.http.protocol.ResponseServer;
 
 import java.io.IOException;
-import java.net.Inet4Address;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketException;
-import java.util.Enumeration;
 import java.util.logging.Logger;
 
 public class HttpServer {
 
+    /**
+     * constructor
+     */
     public HttpServer() {
         this(0);
     }
 
+    /**
+     * contstructor with a port for server socket
+     */
     public HttpServer(int port) {
         this.port = port;
 
@@ -45,124 +47,80 @@ public class HttpServer {
                 .setBooleanParameter(CoreConnectionPNames.TCP_NODELAY, true)
                 .setParameter(CoreProtocolPNames.PROTOCOL_VERSION, HttpVersion.HTTP_1_1);
         registry = new HttpRequestHandlerRegistry();
+
+        BasicHttpProcessor processor = new BasicHttpProcessor();
+        processor.addResponseInterceptor(new ResponseDate());
+        processor.addResponseInterceptor(new ResponseServer());
+        processor.addResponseInterceptor(new ResponseContent());
+        processor.addResponseInterceptor(new ResponseConnControl());
+
+        // Set up the HTTP service
+        httpService = new HttpService(processor, new DefaultConnectionReuseStrategy(),
+                new DefaultHttpResponseFactory());
+
+        httpService.setHandlerResolver(registry);
+        httpService.setParams(params);
     }
 
-    synchronized public boolean start() {
-        InetAddress inetAddress = getInetAddress();
+    synchronized public boolean start() throws IOException {
+        serverSocket = new ServerSocket();
+        serverSocket.bind(new InetSocketAddress(port));
 
-        if (inetAddress == null) {
-            logger.info("can't start server.");
-            return false;
-        }
+        listenerThread = new Thread(new Runnable() {
 
-        try {
-            listenerThread = new ListenerThread(inetAddress, port, params, registry);
-            listenerThread.start();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+            @Override
+            public void run() {
+                logger.info("listening start..");
+
+                do {
+                    try {
+                        Socket client = serverSocket.accept();
+
+                        DefaultHttpServerConnection conn = new DefaultHttpServerConnection();
+                        conn.bind(client, params);
+
+                        Thread worker = new WorkerThread(httpService, conn);
+                        worker.setDaemon(true);
+                        worker.start();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                } while (!serverSocket.isClosed());
+
+                logger.info("listening stop..");
+            }
+        });
+
+        // sets the name of this thread
+        listenerThread.setName("HttpServer(" + port + ")");
+        listenerThread.setDaemon(true);
+        listenerThread.start();
 
         return true;
     }
 
-    synchronized  public void stop() {
-        if (listenerThread != null) {
-            listenerThread.abort();
-        }
-    }
-
-    public InetAddress getInetAddress() {
-        InetAddress foundInetAddress = null;
+    synchronized public void stop() {
         try {
-            Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
-
-            while (networkInterfaces.hasMoreElements()) {
-                NetworkInterface networkInterface = networkInterfaces.nextElement();
-
-                Enumeration<InetAddress> inetAddresses = networkInterface.getInetAddresses();
-
-                while (inetAddresses.hasMoreElements()) {
-                    InetAddress inetAddress = inetAddresses.nextElement();
-
-                    if (!inetAddress.isLoopbackAddress()
-                            && inetAddress instanceof Inet4Address) {
-                        foundInetAddress = inetAddress;
-                        break;
-                    }
-                }
+            if (!serverSocket.isClosed()) {
+                serverSocket.close();
             }
-        } catch (SocketException se) {
-            logger.warning("error: retrieving network interfaces");
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-
-        return foundInetAddress;
     }
 
-    class ListenerThread extends Thread {
-        private ServerSocket serverSocket;
-        private HttpParams params;
-        private HttpService httpService;
-        private boolean stopped;
+    public int getListenPort() {
+        if (serverSocket != null)
+            return serverSocket.getLocalPort();
 
-        public ListenerThread(InetAddress address, int port, HttpParams params,
-                              HttpRequestHandlerRegistry handlerRegistry) throws IOException {
-            this.serverSocket = new ServerSocket(port, 0, address);
-            this.params = params;
+        return 0;
+    }
 
-            BasicHttpProcessor httpProc = new BasicHttpProcessor();
-            httpProc.addResponseInterceptor(new ResponseDate());
-            httpProc.addResponseInterceptor(new ResponseServer());
-            httpProc.addResponseInterceptor(new ResponseContent());
-            httpProc.addResponseInterceptor(new ResponseConnControl());
-
-            // Set up the HTTP service
-            httpService = new HttpService(httpProc,
-                    new DefaultConnectionReuseStrategy(),
-                    new DefaultHttpResponseFactory());
-
-            httpService.setHandlerResolver(handlerRegistry);
-            httpService.setParams(params);
-
-            stopped = false;
-
-            // sets the name of this thread
-            setName("HttpServer(" + port + ")");
-        }
-
-        @Override
-        public void run() {
-            logger.info("listening start..");
-
-            while (!stopped) {
-                try {
-                    Socket client = serverSocket.accept();
-                    DefaultHttpServerConnection conn = new DefaultHttpServerConnection();
-                    conn.bind(client, params);
-
-                    Thread worker = new WorkerThread(httpService, conn);
-                    worker.setDaemon(true);
-                    worker.start();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-
-            logger.info("listening stop..");
-        }
-
-        public void abort() {
-            try {
-                stopped = true;
-
-                if (!serverSocket.isClosed()) {
-                    serverSocket.close();
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
+    public boolean isAlive() {
+        return (serverSocket != null) && !serverSocket.isClosed()
+                && (listenerThread != null) && listenerThread.isAlive();
     }
 
     class WorkerThread extends Thread {
@@ -198,9 +156,15 @@ public class HttpServer {
         }
     }
 
+    public HttpRequestHandlerRegistry getRequestHandlerRegistry() {
+        return registry;
+    }
+
     private static final Logger logger = Logger.getLogger(HttpServer.class.getName());
     protected HttpRequestHandlerRegistry registry;
     protected HttpParams params;
     protected int port;
-    protected ListenerThread listenerThread;
+    protected Thread listenerThread;
+    private ServerSocket serverSocket;
+    private HttpService httpService;
 }
