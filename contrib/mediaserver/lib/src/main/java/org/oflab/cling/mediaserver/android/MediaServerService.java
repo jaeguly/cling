@@ -11,9 +11,13 @@ import android.os.IBinder;
 import org.fourthline.cling.android.AndroidUpnpService;
 import org.fourthline.cling.android.AndroidUpnpServiceImpl;
 import org.fourthline.cling.model.meta.LocalDevice;
-import org.fourthline.cling.model.types.UDN;
 import org.fourthline.cling.registry.Registry;
 
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.util.Enumeration;
 import java.util.logging.Logger;
 
 public class MediaServerService extends Service {
@@ -32,23 +36,19 @@ public class MediaServerService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+
         // The service is being created
+        MediaServer mediaServer = new MediaServer(getApplicationContext());
 
-        MediaServer mediaServer = new MediaServer();
         upnpServiceConnection = new UpnpServiceConnection(mediaServer);
-
         getApplicationContext().bindService(
                 new Intent(MediaServerService.this, AndroidUpnpServiceImpl.class),
-                upnpServiceConnection,
-                Context.BIND_AUTO_CREATE);
-    }
+                upnpServiceConnection, Context.BIND_AUTO_CREATE);
 
-    @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        logger.fine("Received start id " + startId + ": " + intent);
-        // We want this service to continue running until it is explicitly
-        // stopped, so return sticky.
-        return START_STICKY;
+        contentServiceConnection = new ContentServiceConnection(mediaServer);
+        getApplicationContext().bindService(
+                new Intent(MediaServerService.this, HttpServerService.class),
+                contentServiceConnection, Context.BIND_AUTO_CREATE);
     }
 
     @Override
@@ -61,11 +61,44 @@ public class MediaServerService extends Service {
     public void onDestroy() {
         super.onDestroy();
         // The service is no longer used and is being destroyed
+        if (contentServiceConnection != null) {
+            contentServiceConnection.abort();
+            getApplicationContext().unbindService(contentServiceConnection);
+        }
 
         if (upnpServiceConnection != null) {
             upnpServiceConnection.abort();
             getApplicationContext().unbindService(upnpServiceConnection);
         }
+    }
+
+    private InetAddress getInetAddress() {
+
+        InetAddress foundInetAddress = null;
+
+        try {
+            Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
+
+            while (networkInterfaces.hasMoreElements()) {
+                NetworkInterface networkInterface = networkInterfaces.nextElement();
+
+                Enumeration<InetAddress> inetAddresses = networkInterface.getInetAddresses();
+
+                while (inetAddresses.hasMoreElements()) {
+                    InetAddress inetAddress = inetAddresses.nextElement();
+
+                    if (!inetAddress.isLoopbackAddress()
+                            && inetAddress instanceof Inet4Address) {
+                        foundInetAddress = inetAddress;
+                        break;
+                    }
+                }
+            }
+        } catch (SocketException se) {
+            logger.warning("error: retrieving network interfaces");
+        }
+
+        return foundInetAddress;
     }
 
     // monitoring the state of an upnp service.
@@ -79,18 +112,16 @@ public class MediaServerService extends Service {
         public void onServiceConnected(ComponentName name, IBinder service) {
             upnpService = (AndroidUpnpService) service;
 
-            UDN udn = mediaServer.getUdn();
             Registry registry = upnpService.getRegistry();
 
-            LocalDevice mediaServerDevice = registry.getLocalDevice(udn, true);
+            LocalDevice mediaServerDevice = registry.getLocalDevice(mediaServer.getUdn(), true);
 
             if (mediaServerDevice == null) {
                 try {
-                    mediaServerDevice = mediaServer.createDevice();
 
+                    mediaServerDevice = mediaServer.createDevice();
                     registry.addDevice(mediaServerDevice);
 
-                    mediaServer.loadContents();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -100,7 +131,6 @@ public class MediaServerService extends Service {
         @Override
         public void onServiceDisconnected(ComponentName name) {
             upnpService = null;
-            mediaServer = null;
         }
 
         public void abort() {
@@ -121,8 +151,12 @@ public class MediaServerService extends Service {
 
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
-            httpServerService = (HttpServerService) service;
+            httpServerService = ((HttpServerService.LocalBinder) service).getService();
             httpServerService.addHandler("*", mediaServer);
+
+            int port = httpServerService.getListenPort();
+
+            mediaServer.loadContainers("http://" + getInetAddress().getHostAddress() + ":" + port);
         }
 
         @Override
