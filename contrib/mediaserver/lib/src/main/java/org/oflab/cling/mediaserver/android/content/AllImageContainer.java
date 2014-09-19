@@ -5,9 +5,11 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.provider.MediaStore;
 
+import org.fourthline.cling.support.model.ProtocolInfo;
 import org.fourthline.cling.support.model.Res;
 import org.fourthline.cling.support.model.container.Container;
 import org.fourthline.cling.support.model.item.ImageItem;
+import org.seamless.util.MimeType;
 
 public class AllImageContainer extends MediaStoreContainer {
 
@@ -34,19 +36,19 @@ public class AllImageContainer extends MediaStoreContainer {
                 long height = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Images.Media.HEIGHT));
                 long width = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Images.Media.WIDTH));
 
-                String extension = "";
-                int dot = filePath.lastIndexOf('.');
-                if (dot >= 0)
-                    extension = filePath.substring(dot).toLowerCase();
-
                 String duration = null;
                 long bitrate = 0;
-                String value = baseUrl + "/" + id + extension;
+                String value = baseUrl + "/" + id + filePath;
 
-                Res res = new Res(mimeType, fileSize, duration, bitrate, value);
+//                Res res = new Res(mimeType, fileSize, duration, bitrate, value);
+//                Res res = new Res(new ProtocolInfo(mimeType), fileSize, value);
+                int slash = mimeType.indexOf('/');
+                Res res = new Res(
+                        new MimeType(mimeType.substring(0, slash), mimeType.substring(slash + 1)),
+                        fileSize, value);
                 res.setResolution((int)width, (int)height);
 
-                addItem(new ImageItem(id, parentID, title, null, res));
+                addItem(new ImageItem("" + id, parentID, title, null, res));
                 ++childCount;
 
             } while (cursor.moveToNext());
@@ -54,6 +56,7 @@ public class AllImageContainer extends MediaStoreContainer {
 
         cursor.close();
 
+        setChildCount(childCount);
         return childCount;
     }
 
@@ -67,6 +70,4 @@ public class AllImageContainer extends MediaStoreContainer {
             MediaStore.Images.Media.HEIGHT,
             MediaStore.Images.Media.WIDTH,
     };
-
-    protected Context context;
 }
