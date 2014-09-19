@@ -1,10 +1,16 @@
 package org.oflab.cling.mediaserver.android;
 
+import android.content.Context;
+import android.net.Uri;
 import android.provider.MediaStore;
+import android.util.Log;
 
 import org.apache.http.HttpException;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.MethodNotSupportedException;
+import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.protocol.HttpRequestHandler;
 import org.fourthline.cling.binding.LocalServiceBindingException;
@@ -24,18 +30,29 @@ import org.fourthline.cling.model.types.UDN;
 import org.fourthline.cling.support.connectionmanager.ConnectionManagerService;
 import org.fourthline.cling.support.model.DIDLObject;
 import org.fourthline.cling.support.model.ProtocolInfos;
+import org.fourthline.cling.support.model.Res;
 import org.fourthline.cling.support.model.container.Container;
+import org.fourthline.cling.support.model.item.ImageItem;
+import org.fourthline.cling.support.model.item.Item;
 import org.oflab.cling.mediaserver.android.content.AllImageContainer;
 import org.oflab.cling.mediaserver.android.content.BasicContainer;
+import org.oflab.cling.mediaserver.android.content.MediaStoreContainer;
 import org.oflab.cling.mediaserver.android.mockup.MockupContentDirectoryService;
+import org.seamless.util.MimeType;
 
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.Locale;
 import java.util.UUID;
 import java.util.logging.Logger;
 
 public class MediaServer implements HttpRequestHandler {
 
-    public MediaServer() {
+    public MediaServer(Context context) {
+        this.context = context;
     }
 
     public LocalDevice createDevice()
@@ -54,7 +71,7 @@ public class MediaServer implements HttpRequestHandler {
         DeviceDetails details = new DeviceDetails(
                 "Nexus7 (2012)",
                 new ManufacturerDetails("oflab"),
-                new ModelDetails("ClingMediaServer", "basic media server", "v1")
+                new ModelDetails("oflab MediaServer", "basic mediaserver", "v1")
         );
         DeviceType type = new UDADeviceType("MediaServer", 1);
 
@@ -190,20 +207,23 @@ public class MediaServer implements HttpRequestHandler {
 
     }
 
-    public static final String ROOT_ID = "C0";
+    public static final String ROOT_ID = "0";
     public static final String ROOT_PARENT_ID = "-1";
     public static final String ROOT_TITLE = "root";
-    public static final String AUDIO_ID = "C1";
-    public static final String IMAGE_ID = "C2";
-    public static final String VIDEO_ID = "C3";
+    public static final String AUDIO_ID = "1";
+    public static final String IMAGE_ID = "2";
+    public static final String VIDEO_ID = "3";
     public static final String ALL_IMAGE_ID = "21";
     public static final String AUDIO_TITLE = "Music";
     public static final String IMAGE_TITLE = "Images";
     public static final String VIDEO_TITLE = "Video";
 
-    public void loadContents() {
+    public void loadContainers(String baseUrl) {
         if (rootContainer != null)
             return;
+
+        // TEST
+        Log.e("MediaServer", "baseUrl: " + baseUrl);
 
         rootContainer = new BasicContainer(ROOT_ID, ROOT_PARENT_ID, ROOT_TITLE);
 
@@ -211,22 +231,49 @@ public class MediaServer implements HttpRequestHandler {
         BasicContainer imageRootContainer = new BasicContainer(IMAGE_ID, ROOT_ID, IMAGE_TITLE);
         rootContainer.addContainerAndCount(imageRootContainer);
 
-        BasicContainer allImageContainer = new AllImageContainer(ALL_IMAGE_ID, IMAGE_ID, "All");
+        MediaStoreContainer allImageContainer = new AllImageContainer(ALL_IMAGE_ID, IMAGE_ID, "All");
+        allImageContainer.update(context, baseUrl);
         imageRootContainer.addContainerAndCount(allImageContainer);
     }
 
     public DIDLObject findObjectById(String id) {
-        return findObjectById(id, rootContainer);
+        Container container = rootContainer;
+
+        if (id.equals(container.getId()))
+            // found!
+            return container;
+
+        return findObjectById(id, container);
     }
 
-    public DIDLObject findObjectById(String id, Container container) {
-        // TODO:
-        return rootContainer;
-    }
+    public DIDLObject findObjectById(String id, Container givenContainer) {
+        // first, containers
+        for (Container container : givenContainer.getContainers()) {
+            if (id.equals(container.getId())) {
+                // found
+                return container;
+            }
 
+            DIDLObject object = findObjectById(id, container);
+            if (object != null) {
+                // found
+                return object;
+            }
+        }
+
+        // seconds, items
+        for (Item item : givenContainer.getItems()) {
+            if (id.equals(item.getId()))
+                // found
+                return item;
+        }
+
+        // not found
+        return null;
+    }
 
     private static final Logger logger = Logger.getLogger(MediaServer.class.getName());
     private BasicContainer rootContainer;
+    private Context context;
     private UDN udn;
-
 }
