@@ -205,6 +205,64 @@ public class MediaServer implements HttpRequestHandler {
             throws HttpException, IOException {
         // TODO:
 
+        String method = httpRequest.getRequestLine().getMethod().toUpperCase(Locale.ENGLISH);
+        if (!method.equals("GET")) {
+            throw new MethodNotSupportedException(method + " method not supported");
+        }
+
+
+        //     '/I406/storage/...'
+        String uri = httpRequest.getRequestLine().getUri();
+        String objectId;
+
+        // get object's ID
+        int pathPos = uri.indexOf('/', 1);
+        if (pathPos > 0) {
+            objectId = uri.substring(1, pathPos);
+        } else {
+            Log.w("MediaServer", "Object not found, returning 404");
+            httpResponse.setStatusCode(HttpStatus.SC_NOT_FOUND);
+            return;
+        }
+
+        // get object's file path
+        String filePath = Uri.decode(uri.substring(pathPos));
+        Log.w("MediaServer", "objectId is " + objectId);
+
+        File file = new File(filePath);
+        if (!file.exists()) {
+            Log.w("MediaServer", "illegal fileData not readable, returning 404");
+            httpResponse.setStatusCode(HttpStatus.SC_NOT_FOUND);
+            return;
+        }
+
+        InputStream is = new BufferedInputStream(new FileInputStream(new File(filePath)));
+        if (is == null) {
+            Log.w("MediaServer", "Data not readable, returning 404");
+            httpResponse.setStatusCode(HttpStatus.SC_NOT_FOUND);
+            return;
+        }
+
+        // find the object
+        DIDLObject obj = findObjectById(objectId);
+
+        if (obj instanceof ImageItem) {
+            ImageItem item = (ImageItem) obj;
+
+            long size = new File(filePath).length();
+            InputStreamEntity entity = new InputStreamEntity(is, size);
+
+            Res res = item.getFirstResource();
+            entity.setContentType(res.getProtocolInfo().getContentFormat());
+
+            httpResponse.setEntity(entity);
+            httpResponse.setStatusCode(HttpStatus.SC_OK);
+        } else {
+            Log.w("MediaServer", "Data not readable, returning 404");
+            httpResponse.setStatusCode(HttpStatus.SC_NOT_FOUND);
+            return;
+        }
+
     }
 
     public static final String ROOT_ID = "0";
