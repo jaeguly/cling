@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">MediaServer</string>
+    <string name="media_service_started">MediaService started</string>
+    <string name="media_service_connected">MediaService connected</string>
+    <string name="media_service_disconnected">MediaService disconnected</string>
+    <string name="media_service_label">MediaService label</string>
+    <string name="media_service_stopped">MediaService stopped</string>
 </resources>
