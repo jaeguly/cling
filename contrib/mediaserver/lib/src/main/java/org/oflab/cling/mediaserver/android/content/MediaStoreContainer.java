@@ -6,8 +6,6 @@ import org.fourthline.cling.support.model.DIDLObject;
 import org.fourthline.cling.support.model.container.Container;
 
 public abstract class MediaStoreContainer extends BasicContainer {
-    public static final DIDLObject.Class CLASS_CONTAINER = new DIDLObject.Class("object.container");
-
     public MediaStoreContainer(String id, String parentId, String title) {
         super(id, parentId, title);
     }

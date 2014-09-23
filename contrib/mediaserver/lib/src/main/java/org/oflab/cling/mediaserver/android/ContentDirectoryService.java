@@ -34,6 +34,7 @@ public class ContentDirectoryService extends AbstractContentDirectoryService {
         int matchCount = 0;
 
         DIDLObject object = mediaServer.findObjectById(objectId);
+
         if (object != null) {
             if (browseFlag.equals(BrowseFlag.METADATA)) {
                 if (object instanceof Container) {
