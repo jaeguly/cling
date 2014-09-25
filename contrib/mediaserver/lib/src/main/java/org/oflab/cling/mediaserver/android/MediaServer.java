@@ -2,7 +2,6 @@ package org.oflab.cling.mediaserver.android;
 
 import android.content.Context;
 import android.net.Uri;
-import android.provider.MediaStore;
 import android.util.Log;
 
 import org.apache.http.HttpException;
@@ -34,11 +33,12 @@ import org.fourthline.cling.support.model.Res;
 import org.fourthline.cling.support.model.container.Container;
 import org.fourthline.cling.support.model.item.ImageItem;
 import org.fourthline.cling.support.model.item.Item;
+import org.fourthline.cling.support.model.item.VideoItem;
 import org.oflab.cling.mediaserver.android.content.AllImageContainer;
+import org.oflab.cling.mediaserver.android.content.AllVideoContainer;
 import org.oflab.cling.mediaserver.android.content.BasicContainer;
 import org.oflab.cling.mediaserver.android.content.MediaStoreContainer;
 import org.oflab.cling.mediaserver.android.mockup.MockupContentDirectoryService;
-import org.seamless.util.MimeType;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -111,7 +111,7 @@ public class MediaServer implements HttpRequestHandler {
 
         contentDirectoryService.setManager(
                 new DefaultServiceManager<ContentDirectoryService>(
-                    contentDirectoryService, ContentDirectoryService.class) {
+                        contentDirectoryService, ContentDirectoryService.class) {
                     @Override
                     protected ContentDirectoryService createServiceInstance() throws Exception {
                         return new ContentDirectoryService(getMediaServer());
@@ -257,6 +257,17 @@ public class MediaServer implements HttpRequestHandler {
 
             httpResponse.setEntity(entity);
             httpResponse.setStatusCode(HttpStatus.SC_OK);
+        } else if (obj instanceof VideoItem) {
+            VideoItem item = (VideoItem) obj;
+
+            long size = new File(filePath).length();
+            InputStreamEntity entity = new InputStreamEntity(is, size);
+
+            Res res = item.getFirstResource();
+            entity.setContentType(res.getProtocolInfo().getContentFormat());
+
+            httpResponse.setEntity(entity);
+            httpResponse.setStatusCode(HttpStatus.SC_OK);
         } else {
             Log.w("MediaServer", "Data not readable, returning 404");
             httpResponse.setStatusCode(HttpStatus.SC_NOT_FOUND);
@@ -272,9 +283,11 @@ public class MediaServer implements HttpRequestHandler {
     public static final String IMAGE_ID = "2";
     public static final String VIDEO_ID = "3";
     public static final String ALL_IMAGE_ID = "21";
+    public static final String ALL_VIDEO_ID = "31";
     public static final String AUDIO_TITLE = "Music";
     public static final String IMAGE_TITLE = "Images";
     public static final String VIDEO_TITLE = "Video";
+
 
     public void loadContainers(String baseUrl) {
         if (rootContainer != null)
@@ -292,7 +305,16 @@ public class MediaServer implements HttpRequestHandler {
         MediaStoreContainer allImageContainer = new AllImageContainer(ALL_IMAGE_ID, IMAGE_ID, "All");
         allImageContainer.update(context, baseUrl);
         imageRootContainer.addContainerAndCount(allImageContainer);
+
+        // video part
+        BasicContainer videoRootContainer = new BasicContainer(VIDEO_ID, ROOT_ID, VIDEO_TITLE);
+        rootContainer.addContainerAndCount(videoRootContainer);
+
+        MediaStoreContainer allVideoContainer = new AllVideoContainer(ALL_VIDEO_ID, VIDEO_ID, "All");
+        allVideoContainer.update(context, baseUrl);
+        videoRootContainer.addContainerAndCount(allVideoContainer);
     }
+
 
     public DIDLObject findObjectById(String id) {
         Container container = rootContainer;
