@@ -33,7 +33,9 @@ import org.fourthline.cling.support.model.Res;
 import org.fourthline.cling.support.model.container.Container;
 import org.fourthline.cling.support.model.item.ImageItem;
 import org.fourthline.cling.support.model.item.Item;
+import org.fourthline.cling.support.model.item.MusicTrack;
 import org.fourthline.cling.support.model.item.VideoItem;
+import org.oflab.cling.mediaserver.android.content.AllAudioContainer;
 import org.oflab.cling.mediaserver.android.content.AllImageContainer;
 import org.oflab.cling.mediaserver.android.content.AllVideoContainer;
 import org.oflab.cling.mediaserver.android.content.BasicContainer;
@@ -268,6 +270,17 @@ public class MediaServer implements HttpRequestHandler {
 
             httpResponse.setEntity(entity);
             httpResponse.setStatusCode(HttpStatus.SC_OK);
+        } else if (obj instanceof MusicTrack) {
+            MusicTrack item = (MusicTrack) obj;
+
+            long size = new File(filePath).length();
+            InputStreamEntity entity = new InputStreamEntity(is, size);
+
+            Res res = item.getFirstResource();
+            entity.setContentType(res.getProtocolInfo().getContentFormat());
+
+            httpResponse.setEntity(entity);
+            httpResponse.setStatusCode(HttpStatus.SC_OK);
         } else {
             Log.w("MediaServer", "Data not readable, returning 404");
             httpResponse.setStatusCode(HttpStatus.SC_NOT_FOUND);
@@ -282,6 +295,7 @@ public class MediaServer implements HttpRequestHandler {
     public static final String AUDIO_ID = "1";
     public static final String IMAGE_ID = "2";
     public static final String VIDEO_ID = "3";
+    public static final String ALL_AUDIO_ID = "11";
     public static final String ALL_IMAGE_ID = "21";
     public static final String ALL_VIDEO_ID = "31";
     public static final String AUDIO_TITLE = "Music";
@@ -297,6 +311,14 @@ public class MediaServer implements HttpRequestHandler {
         Log.e("MediaServer", "baseUrl: " + baseUrl);
 
         rootContainer = new BasicContainer(ROOT_ID, ROOT_PARENT_ID, ROOT_TITLE);
+
+        // audio part
+        BasicContainer audioRootContainer = new BasicContainer(AUDIO_ID, ROOT_ID, AUDIO_TITLE);
+        rootContainer.addContainerAndCount(audioRootContainer);
+
+        MediaStoreContainer allAudioContainer = new AllAudioContainer(ALL_AUDIO_ID, AUDIO_ID, "All");
+        allAudioContainer.update(context, baseUrl);
+        audioRootContainer.addContainerAndCount(allAudioContainer);
 
         // image part
         BasicContainer imageRootContainer = new BasicContainer(IMAGE_ID, ROOT_ID, IMAGE_TITLE);
