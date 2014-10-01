@@ -48,7 +48,7 @@ public class AllImageContainer extends MediaStoreContainer {
                         fileSize, value);
                 res.setResolution((int)width, (int)height);
 
-                addItem(new ImageItem("" + id, parentID, title, null, res));
+                addItem(new ImageItem(id, parentID, title, null, res));
                 ++childCount;
 
             } while (cursor.moveToNext());

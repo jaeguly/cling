@@ -45,7 +45,7 @@ public class AllVideoContainer extends MediaStoreContainer {
                         + (duration % (1000 * 60 * 60)) / (1000 * 60) + ":"
                         + (duration % (1000 * 60)) / 1000);
 
-                addItem(new VideoItem("" + id, parentID, title, creator, res));
+                addItem(new VideoItem(id, parentID, title, creator, res));
                 ++childCount;
 
             } while (cursor.moveToNext());
