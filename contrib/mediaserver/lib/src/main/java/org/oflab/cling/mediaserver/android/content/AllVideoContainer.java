@@ -33,14 +33,19 @@ public class AllVideoContainer extends MediaStoreContainer {
                 long fileSize = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Video.Media.SIZE));
                 long height = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Video.Media.HEIGHT));
                 long width = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Video.Media.WIDTH));
+                String creator = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Video.Media.ARTIST));
+                long duration = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DURATION));
 
                 int slash = mimeType.indexOf('/');
                 Res res = new Res(
                         new MimeType(mimeType.substring(0, slash), mimeType.substring(slash + 1)),
                         fileSize, baseUrl + "/" + id + filePath);
                 res.setResolution((int)width, (int)height);
+                res.setDuration(duration / (1000 * 60 * 60) + ":"
+                        + (duration % (1000 * 60 * 60)) / (1000 * 60) + ":"
+                        + (duration % (1000 * 60)) / 1000);
 
-                addItem(new VideoItem("" + id, parentID, title, null, res));
+                addItem(new VideoItem("" + id, parentID, title, creator, res));
                 ++childCount;
 
             } while (cursor.moveToNext());
@@ -61,5 +66,7 @@ public class AllVideoContainer extends MediaStoreContainer {
             MediaStore.Video.Media.SIZE,
             MediaStore.Video.Media.HEIGHT,
             MediaStore.Video.Media.WIDTH,
+            MediaStore.Video.Media.ARTIST,
+            MediaStore.Video.Media.DURATION,
     };
 }
